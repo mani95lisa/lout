@@ -2,6 +2,7 @@
 
 var Lab = require('lab');
 var Hapi = require('hapi');
+var cheerio = require('cheerio');
 
 // Declare internals
 
@@ -67,8 +68,17 @@ describe('Lout', function () {
 
         server.inject('/docs?path=/test', function (res) {
 
-            expect(res.result).to.contain('GET: /test');
-            expect(res.result).to.contain('POST: /test');
+            var $ = cheerio.load(res.result);
+
+            expect($('.anchor-link').length).to.equal(2);
+            expect($('.anchor').length).to.equal(2);
+
+            var matches = ['GET /test', 'POST /test'];
+            $('.panel-heading h2').each(function() {
+
+                expect(matches.shift()).to.equal(this.text());
+            });
+
             done();
         });
     });
@@ -101,7 +111,7 @@ describe('Lout', function () {
 
         server.inject('/docs', function (res) {
 
-            expect(res.result).to.not.contain('/docs');
+            expect(res.result).to.not.contain('?path=/docs');
             done();
         });
     });
@@ -116,7 +126,9 @@ describe('Lout', function () {
     });
 
     it('displays nested rules', function (done) {
+
         server.inject('/docs?path=/nested', function (res) {
+
             expect(res.result).to.contain('param1');
             expect(res.result).to.contain('nestedparam1');
             expect(res.result).to.contain('icon-star');
@@ -125,7 +137,9 @@ describe('Lout', function () {
     });
 
     it('displays path parameters', function (done) {
+
         server.inject('/docs?path=/path/{pparam}/test', function (res) {
+
             expect(res.result).to.contain('Path Parameters');
             expect(res.result).to.contain('pparam');
             expect(res.result).to.contain('icon-star');
